@@ -49,7 +49,7 @@ namespace Microsoft.AspNet.StressFramework
             DisplayName = suppliedDisplayName ?? BaseDisplayName;
             Iterations = iterations;
             WarmupIterations = warmupIterations;
-            
+
             TestMethodArguments = testMethodArguments?.ToArray();
         }
 

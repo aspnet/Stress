@@ -9,6 +9,7 @@ using Xunit.Abstractions;
 using Xunit.Sdk;
 using System.Collections.Generic;
 using Microsoft.AspNet.StressFramework.Collectors;
+using System.Linq;
 using System.Reflection;
 
 #if DNXCORE50 || DNX451

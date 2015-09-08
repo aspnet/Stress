@@ -13,10 +13,6 @@ namespace Microsoft.AspNet.StressFramework
         private readonly IMessageBus _bus;
         private readonly Process _me;
 
-        private MemoryUsage _startMemory;
-        private MemoryUsage _endMemory;
-        private CpuTime _startCpu;
-
         public IReadOnlyList<Metric> Recordings { get; }
         public int Iteration { get; }
 
