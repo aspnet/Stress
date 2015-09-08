@@ -7,6 +7,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xunit.Abstractions;
 using Xunit.Sdk;
+using System.Collections.Generic;
+using Microsoft.AspNet.StressFramework.Collectors;
 
 #if DNXCORE50 || DNX451
 using Microsoft.Dnx.Runtime;
@@ -20,6 +22,8 @@ namespace Microsoft.AspNet.StressFramework
 {
     public class StressTestRunner : TestRunner<StressTestCase>
     {
+        private readonly IList<ICollector> _collectors;
+
         public StressTestRunner(
             StressTestCase test,
             string displayName,
@@ -29,7 +33,8 @@ namespace Microsoft.AspNet.StressFramework
             IMessageBus messageBus,
             ExceptionAggregator aggregator,
             CancellationTokenSource cancellationTokenSource,
-            IMessageSink diagnosticMessageSink)
+            IMessageSink diagnosticMessageSink,
+            IList<ICollector> collectors)
             : base(
                   new StressTestTest() { DisplayName = displayName, TestCase = test },
                   messageBus,
@@ -41,6 +46,7 @@ namespace Microsoft.AspNet.StressFramework
                   aggregator,
                   cancellationTokenSource)
         {
+            _collectors = collectors;
         }
 
         protected async override Task<Tuple<decimal, string>> InvokeTestAsync(ExceptionAggregator aggregator)
@@ -64,6 +70,11 @@ namespace Microsoft.AspNet.StressFramework
 
             var instance = Activator.CreateInstance(TestClass, ConstructorArguments);
 
+            foreach (var collector in _collectors)
+            {
+                collector.Initialize();
+            }
+
             try
             {
                 for (int i = 0; i < TestCase.WarmupIterations; i++)
@@ -71,15 +82,17 @@ namespace Microsoft.AspNet.StressFramework
                     await InvokeTestMethodAsync(instance);
                 }
 
-                var stopwatch = new Stopwatch();
+                var stopwatch = Stopwatch.StartNew();
                 for (int i = 0; i < TestCase.Iterations; i++)
                 {
-                    stopwatch.Start();
+                    var context = new StressTestIterationContext(_collectors);
+                    context.BeginIteration();
 
                     await InvokeTestMethodAsync(instance);
 
-                    stopwatch.Stop();
+                    context.EndIteration();
                 }
+                stopwatch.Stop();
 
                 var executionTime = (decimal)stopwatch.Elapsed.TotalSeconds;
 

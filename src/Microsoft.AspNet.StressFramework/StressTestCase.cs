@@ -2,9 +2,11 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNet.StressFramework.Collectors;
 using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
@@ -13,6 +15,11 @@ namespace Microsoft.AspNet.StressFramework
 {
     public class StressTestCase : XunitTestCase
     {
+#if DNX451
+        [NonSerialized]
+#endif
+        private readonly List<ICollector> _collectors;
+
 #if DNX451
         [NonSerialized]
 #endif
@@ -29,6 +36,14 @@ namespace Microsoft.AspNet.StressFramework
             var suppliedDisplayName = TestMethod.Method.GetCustomAttributes(typeof(FactAttribute))
                 .First()
                 .GetNamedArgument<string>("DisplayName");
+
+            // Load collectors
+            _collectors = TestMethod.Method
+                .GetCustomAttributes(typeof(ICollector))
+                .OfType<ReflectionAttributeInfo>()
+                .Select(r => r.Attribute)
+                .OfType<ICollector>()
+                .ToList();
 
             _diagnosticMessageSink = diagnosticMessageSink;
             DisplayName = suppliedDisplayName ?? BaseDisplayName;
@@ -58,7 +73,8 @@ namespace Microsoft.AspNet.StressFramework
                 messageBus,
                 aggregator,
                 cancellationTokenSource,
-                _diagnosticMessageSink);
+                _diagnosticMessageSink,
+                _collectors);
             return runner.RunAsync();
         }
     }

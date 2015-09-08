@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNet.StressFramework;
+using Microsoft.AspNet.StressFramework.Collectors;
 using Microsoft.AspNet.WebUtilities;
 using Xunit;
 
@@ -14,6 +15,7 @@ namespace Microsoft.AspNet.Stress.Tests
     public class SmokeTest
     {
         [StressTest]
+        [TotalMemoryCollector]
         public void SmokeyMcSmokeTest()
         {
             Assert.True(true);
