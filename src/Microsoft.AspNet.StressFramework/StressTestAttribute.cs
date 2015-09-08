@@ -6,7 +6,7 @@ using Xunit.Sdk;
 
 namespace Microsoft.AspNet.StressFramework
 {
-    [XunitTestCaseDiscoverer("Microsoft.Aspnet.StressFramework.StressTestDiscoverer", "Microsoft.Aspnet.StressFramework")]
+    [XunitTestCaseDiscoverer("Microsoft.AspNet.StressFramework.StressTestDiscoverer", "Microsoft.AspNet.StressFramework")]
     public class StressTestAttribute : FactAttribute
     {
         public int Iterations { get; set; } = 100;

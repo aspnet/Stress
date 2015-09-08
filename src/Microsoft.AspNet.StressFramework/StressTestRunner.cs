@@ -2,11 +2,11 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit.Abstractions;
 using Xunit.Sdk;
-using System.Diagnostics;
 
 #if DNXCORE50 || DNX451
 using Microsoft.Dnx.Runtime;
@@ -52,7 +52,6 @@ namespace Microsoft.AspNet.StressFramework
 
         protected override async Task<RunSummary> RunTestAsync()
         {
-            
             for (int i = 0; i < TestCase.WarmupIterations; i++)
             {
                 var runner = CreateRunner(i + 1, TestCase.WarmupIterations,  warmup: true);

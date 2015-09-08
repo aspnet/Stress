@@ -35,7 +35,7 @@ namespace Microsoft.AspNet.StressFramework
             Iterations = iterations;
             WarmupIterations = warmupIterations;
             
-            TestMethodArguments = testMethodArguments.ToArray();
+            TestMethodArguments = testMethodArguments?.ToArray();
         }
 
         public int Iterations { get; private set; }
