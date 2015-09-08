@@ -1,5 +1,6 @@
 Stress
 ===
+Travis:   [![Travis](https://travis-ci.org/aspnet/Stress.svg?branch=dev)](https://travis-ci.org/aspnet/Stress)
 
 Stress infrastructure and tests.
 
