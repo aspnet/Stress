@@ -22,7 +22,7 @@ namespace Microsoft.AspNet.StressFramework
             IAttributeInfo attribute)
         {
             var tests = new List<IXunitTestCase>();
-            tests.Add(new StressTest(
+            tests.Add(new StressTestCase(
                 attribute.GetNamedArgument<int>(nameof(StressTestAttribute.Iterations)),
                 attribute.GetNamedArgument<int>(nameof(StressTestAttribute.WarmupIterations)),
                 _messageSink,

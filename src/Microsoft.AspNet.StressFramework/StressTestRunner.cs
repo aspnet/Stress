@@ -18,89 +18,105 @@ using XunitDiagnosticMessage = Xunit.Sdk.DiagnosticMessage;
 
 namespace Microsoft.AspNet.StressFramework
 {
-    public class StressTestRunner : XunitTestCaseRunner
+    public class StressTestRunner : TestRunner<StressTestCase>
     {
-        private static string _machineName = GetMachineName();
-        private static string _framework = GetFramework();
-        private readonly IMessageSink _diagnosticMessageSink;
-
         public StressTestRunner(
-                StressTest test,
-                string displayName,
-                string skipReason,
-                object[] constructorArguments,
-                object[] testMethodArguments,
-                IMessageBus messageBus,
-                ExceptionAggregator aggregator,
-                CancellationTokenSource cancellationTokenSource,
-                IMessageSink diagnosticMessageSink)
+            StressTestCase test,
+            string displayName,
+            string skipReason,
+            object[] constructorArguments,
+            object[] testMethodArguments,
+            IMessageBus messageBus,
+            ExceptionAggregator aggregator,
+            CancellationTokenSource cancellationTokenSource,
+            IMessageSink diagnosticMessageSink)
             : base(
-                  test,
-                  displayName,
-                  skipReason,
-                  constructorArguments,
-                  testMethodArguments,
+                  new StressTestTest() { DisplayName = displayName, TestCase = test },
                   messageBus,
+                  ((ReflectionTypeInfo)test.TestMethod.TestClass.Class).Type,
+                  constructorArguments,
+                  ((ReflectionMethodInfo)test.TestMethod.Method).MethodInfo,
+                  testMethodArguments,
+                  skipReason,
                   aggregator,
                   cancellationTokenSource)
         {
-            TestCase = test;
-            _diagnosticMessageSink = diagnosticMessageSink;
         }
 
-        public new StressTest TestCase { get; private set; }
-
-        protected override async Task<RunSummary> RunTestAsync()
+        protected async override Task<Tuple<decimal, string>> InvokeTestAsync(ExceptionAggregator aggregator)
         {
-            for (int i = 0; i < TestCase.WarmupIterations; i++)
+            var output = string.Empty;
+
+            TestOutputHelper testOutputHelper = null;
+            foreach (object obj in ConstructorArguments)
             {
-                var runner = CreateRunner(i + 1, TestCase.WarmupIterations,  warmup: true);
-                await runner.RunAsync();
+                testOutputHelper = obj as TestOutputHelper;
+                if (testOutputHelper != null)
+                {
+                    break;
+                }
             }
 
-            var stopwatch = new Stopwatch();
-            for (int i = 0; i < TestCase.Iterations; i++)
+            if (testOutputHelper != null)
             {
-                var runner = CreateRunner(i + 1, TestCase.Iterations, warmup: false);
-
-                stopwatch.Start();
-
-                // Running the actual test
-                var result = await runner.RunAsync();
-
-                stopwatch.Stop();
+                testOutputHelper.Initialize(MessageBus, Test);
             }
 
-            var runSummary = new RunSummary()
+            var instance = Activator.CreateInstance(TestClass, ConstructorArguments);
+
+            try
             {
-                Total = 1,
-                Time = (decimal)stopwatch.Elapsed.TotalSeconds,
-            };
-            return runSummary;
+                for (int i = 0; i < TestCase.WarmupIterations; i++)
+                {
+                    await InvokeTestMethodAsync(instance);
+                }
+
+                var stopwatch = new Stopwatch();
+                for (int i = 0; i < TestCase.Iterations; i++)
+                {
+                    stopwatch.Start();
+
+                    await InvokeTestMethodAsync(instance);
+
+                    stopwatch.Stop();
+                }
+
+                var executionTime = (decimal)stopwatch.Elapsed.TotalSeconds;
+
+                if (testOutputHelper != null)
+                {
+                    output = testOutputHelper.Output;
+                    testOutputHelper.Uninitialize();
+                }
+
+                return Tuple.Create(executionTime, output);
+            }
+            catch (Exception ex)
+            {
+                Aggregator.Add(ex);
+                return Tuple.Create(0m, output);
+            }
+            finally
+            {
+                (instance as IDisposable)?.Dispose();
+            }
         }
 
-        private XunitTestRunner CreateRunner(int iteration, int totalIterations, bool warmup)
+        private async Task InvokeTestMethodAsync(object instance)
         {
-            var name = $"{DisplayName} [Stage: {(warmup ? "Warmup" : "Collection")}] [Iteration: {iteration}/{totalIterations}]";
-
-            return new XunitTestRunner(
-                new XunitTest(TestCase, name),
-                MessageBus,
-                TestClass,
-                ConstructorArguments,
-                TestMethod,
-                TestMethodArguments,
-                SkipReason,
-                BeforeAfterAttributes,
-                Aggregator,
-                CancellationTokenSource);
+            var result = TestMethod.Invoke(instance, TestMethodArguments);
+            var task = result as Task;
+            if (task != null)
+            {
+                await task;
+            }
         }
 
         private static string GetFramework()
         {
 #if DNX451 || DNXCORE50
-            var services = CallContextServiceLocator.Locator.ServiceProvider; 
-            var env = (IRuntimeEnvironment)services.GetService(typeof(IRuntimeEnvironment)); 
+            var services = CallContextServiceLocator.Locator.ServiceProvider;
+            var env = (IRuntimeEnvironment)services.GetService(typeof(IRuntimeEnvironment));
             return "DNX." + env.RuntimeType;
 #else
             return ".NETFramework";
@@ -110,6 +126,13 @@ namespace Microsoft.AspNet.StressFramework
         private static string GetMachineName()
         {
             return Environment.GetEnvironmentVariable("COMPUTERNAME");
+        }
+
+        private class StressTestTest : ITest
+        {
+            public string DisplayName { get; set; }
+
+            public ITestCase TestCase { get; set; }
         }
     }
 }

@@ -11,14 +11,14 @@ using Xunit.Sdk;
 
 namespace Microsoft.AspNet.StressFramework
 {
-    public class StressTest : XunitTestCase
+    public class StressTestCase : XunitTestCase
     {
 #if DNX451
         [NonSerialized]
 #endif
         private readonly IMessageSink _diagnosticMessageSink;
 
-        public StressTest(
+        public StressTestCase(
             int iterations,
             int warmupIterations,
             IMessageSink diagnosticMessageSink,
