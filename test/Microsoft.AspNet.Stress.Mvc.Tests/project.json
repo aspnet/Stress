@@ -1,0 +1,15 @@
+﻿{
+  "version": "1.0.0-*",
+  "commands": {
+    "test": "xunit.runner.aspnet"
+  },
+    "dependencies": {
+        "Microsoft.AspNet.StressFramework": "",
+        "Microsoft.AspNet.TestHost": "1.0.0-*",
+        "HelloWorldMvc": "1.0.0-*"
+    },
+  "frameworks": {
+    "dnx451": { },
+    "dnxcore50": { }
+  }
+}

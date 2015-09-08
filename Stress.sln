@@ -19,6 +19,12 @@ Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Microsoft.AspNet.StressFram
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Microsoft.AspNet.Stress.Tests", "test\Microsoft.AspNet.Stress.Tests\Microsoft.AspNet.Stress.Tests.xproj", "{489E5EDA-D686-4B57-9C5D-70B7879EF7E8}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "websites", "websites", "{6BF7AF55-1A79-4C18-9DA7-68F52D319A3A}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "HelloWorldMvc", "test\websites\HelloWorldMvc\HelloWorldMvc.xproj", "{DF9C97D9-66EE-4171-9748-AF67057DC7AC}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Microsoft.AspNet.Stress.Mvc.Tests", "test\Microsoft.AspNet.Stress.Mvc.Tests\Microsoft.AspNet.Stress.Mvc.Tests.xproj", "{F4279585-9A04-408C-9AD6-BA4B058F739F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +39,14 @@ Global
 		{489E5EDA-D686-4B57-9C5D-70B7879EF7E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{489E5EDA-D686-4B57-9C5D-70B7879EF7E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{489E5EDA-D686-4B57-9C5D-70B7879EF7E8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DF9C97D9-66EE-4171-9748-AF67057DC7AC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DF9C97D9-66EE-4171-9748-AF67057DC7AC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DF9C97D9-66EE-4171-9748-AF67057DC7AC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DF9C97D9-66EE-4171-9748-AF67057DC7AC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F4279585-9A04-408C-9AD6-BA4B058F739F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F4279585-9A04-408C-9AD6-BA4B058F739F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F4279585-9A04-408C-9AD6-BA4B058F739F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F4279585-9A04-408C-9AD6-BA4B058F739F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -40,5 +54,8 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{1C90BF69-88B0-4079-9F90-48FE5ABE3B25} = {C1B84D1C-2AF9-419D-BD57-16B87F377256}
 		{489E5EDA-D686-4B57-9C5D-70B7879EF7E8} = {7B63597D-863D-46C4-9F9E-D60E74435E81}
+		{6BF7AF55-1A79-4C18-9DA7-68F52D319A3A} = {7B63597D-863D-46C4-9F9E-D60E74435E81}
+		{DF9C97D9-66EE-4171-9748-AF67057DC7AC} = {6BF7AF55-1A79-4C18-9DA7-68F52D319A3A}
+		{F4279585-9A04-408C-9AD6-BA4B058F739F} = {7B63597D-863D-46C4-9F9E-D60E74435E81}
 	EndGlobalSection
 EndGlobal
