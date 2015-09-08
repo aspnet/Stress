@@ -16,7 +16,7 @@ namespace Microsoft.AspNet.Stress.Tests
             Fixture = fixture;
         }
 
-        public HelloWorldFixture Fixture { get; }
+        public MvcFixture Fixture { get; }
 
         [StressTest]
         public async Task Index()

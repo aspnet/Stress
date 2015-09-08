@@ -3,6 +3,8 @@
 
 using System;
 using System.IO;
+using System.Linq;
+using System.Net.Http;
 using System.Reflection;
 using System.Runtime.Versioning;
 using Microsoft.AspNet.Builder;
@@ -15,26 +17,48 @@ using Microsoft.Framework.DependencyInjection;
 
 namespace Microsoft.AspNet.Stress.Mvc.Tests
 {
-    public static class HostingStartup
+    public class MvcFixture : IDisposable
     {
-        public static TestServer CreateServer(
-            Type startupType,
-            Action<IApplicationBuilder> builder,
-            Action<IServiceCollection> configureServices)
+        public MvcFixture(object startupInstance)
         {
-            return TestServer.Create(
+            var startupTypeInfo = startupInstance.GetType().GetTypeInfo();
+            var configureMethod = (Action<IApplicationBuilder>)startupTypeInfo
+                .DeclaredMethods
+                .First(m => m.Name == "Configure")
+                .CreateDelegate(typeof(Action<IApplicationBuilder>), startupInstance);
+
+            var configureServices = (Action<IServiceCollection>)startupTypeInfo
+                .DeclaredMethods
+                .First(m => m.Name == "ConfigureServices")
+                .CreateDelegate(typeof(Action<IServiceCollection>), startupInstance);
+
+            Server = TestServer.Create(
                 CallContextServiceLocator.Locator.ServiceProvider,
-                config: null,
-                configureApp: builder,
-                configureServices: InitializeServices(startupType, configureServices));
+                configureMethod,
+                configureServices: InitializeServices(startupTypeInfo.Assembly, configureServices));
+
+            Client = Server.CreateClient();
+            Client.BaseAddress = new Uri("http://localhost");
         }
 
-        public static Action<IServiceCollection> InitializeServices(Type startup, Action<IServiceCollection> next)
+        public TestServer Server { get; }
+
+        public HttpClient Client { get; }
+
+        public void Dispose()
+        {
+            Client.Dispose();
+            Server.Dispose();
+        }
+
+        public static Func<IServiceCollection, IServiceProvider> InitializeServices(
+            Assembly startupAssembly,
+            Action<IServiceCollection> next)
         {
             var applicationServices = CallContextServiceLocator.Locator.ServiceProvider;
             var libraryManager = applicationServices.GetRequiredService<ILibraryManager>();
 
-            var applicationName = startup.GetTypeInfo().Assembly.GetName().Name;
+            var applicationName = startupAssembly.GetName().Name;
             var library = libraryManager.GetLibrary(applicationName);
             var applicationRoot = Path.GetDirectoryName(library.Path);
 
@@ -50,10 +74,12 @@ namespace Microsoft.AspNet.Stress.Mvc.Tests
                 services.AddInstance<IHostingEnvironment>(hostingEnvironment);
 
                 var assemblyProvider = new StaticAssemblyProvider();
-                assemblyProvider.CandidateAssemblies.Add(startup.GetTypeInfo().Assembly);
+                assemblyProvider.CandidateAssemblies.Add(startupAssembly);
                 services.AddInstance(assemblyProvider);
 
                 next(services);
+
+                return services.BuildServiceProvider();
             };
         }
 
