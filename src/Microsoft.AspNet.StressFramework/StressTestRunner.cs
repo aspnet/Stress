@@ -85,7 +85,7 @@ namespace Microsoft.AspNet.StressFramework
                 var stopwatch = Stopwatch.StartNew();
                 for (int i = 0; i < TestCase.Iterations; i++)
                 {
-                    var context = new StressTestIterationContext(_collectors);
+                    var context = new StressTestIterationContext(i, _collectors, MessageBus);
                     context.BeginIteration();
 
                     await InvokeTestMethodAsync(instance);

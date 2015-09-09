@@ -66,9 +66,6 @@ namespace Microsoft.AspNet.StressFramework
 
             // Capture CPU time
 
-            // Capture memory usage again, before stopping collectors to ensure we miss their allocations
-            _endMemory = MemoryUsage.Capture();
-
             // Record the elapsed time and memory usage
             _recordings.Add(Metric.Create(Iteration, new ElapsedTime(_stopwatch.Elapsed)));
             _recordings.Add(Metric.Create(Iteration, MemoryUsage.Compare(_startMemory, _endMemory)));

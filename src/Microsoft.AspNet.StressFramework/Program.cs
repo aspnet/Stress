@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Net.Sockets;
 using System.Reflection;
 using Microsoft.Dnx.Runtime;
 
@@ -26,7 +25,7 @@ namespace Microsoft.AspNet.StressFramework
             var className = args[2];
 
             // Find the class
-            var asm = Assembly.Load(libraryName);
+            var asm = Assembly.Load(new AssemblyName(libraryName));
             if (asm == null) {
                 Console.Error.WriteLine($"Failed to load assembly: {libraryName}");
                 return -2;
