@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace Microsoft.AspNet.StressFramework
+﻿namespace Microsoft.AspNet.StressFramework
 {
     public interface IStressTestHost
     {
+        void Setup(StressTestHostContext context);
+
         void Run(StressTestHostContext context);
     }
 }

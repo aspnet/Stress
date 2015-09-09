@@ -2,12 +2,10 @@
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
-using Xunit.Abstractions;
-using Xunit.Sdk;
 
 namespace Microsoft.AspNet.StressFramework
 {
-    internal class StressTestHostProcess
+    internal class StressTestHostProcess : IDisposable
     {
         public static readonly string ReleaseMessage = "RELEASE_STRESS_TEST_HOST";
 
@@ -51,6 +49,11 @@ namespace Microsoft.AspNet.StressFramework
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
             return new StressTestHostProcess(process);
+        }
+
+        public void Dispose()
+        {
+            Process.Dispose();
         }
     }
 }

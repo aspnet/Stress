@@ -82,12 +82,20 @@ namespace Microsoft.AspNet.StressFramework
                 StressTestTrace.WriteLine("Launching Host");
 
                 // Launch the host to run the test
+                var setup = InvokeTestMethodAsync(instance);
+                setup.Driver.Setup();
                 var host = LaunchHost(TestMethod);
 
                 var stopwatch = Stopwatch.StartNew();
                 StressTestTrace.WriteLine("Releasing Host");
                 host.BeginIterations();
-                host.Process.WaitForExit();
+                setup.Driver.Run(setup.DriverIterations);
+
+                if (setup.HostIterations != 0)
+                {
+                    host.Process.WaitForExit();
+                }
+
                 stopwatch.Stop();
                 StressTestTrace.WriteLine("Host Terminated");
 
@@ -117,14 +125,9 @@ namespace Microsoft.AspNet.StressFramework
             return StressTestHostProcess.Launch(method, StressTestTrace.WriteRawLine);
         }
 
-        private async Task InvokeTestMethodAsync(object instance)
+        private StressRunSetup InvokeTestMethodAsync(object instance)
         {
-            var result = TestMethod.Invoke(instance, TestMethodArguments);
-            var task = result as Task;
-            if (task != null)
-            {
-                await task;
-            }
+            return (StressRunSetup)TestMethod.Invoke(instance, TestMethodArguments);
         }
 
         private static string GetFramework()

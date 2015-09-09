@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using Microsoft.Dnx.Runtime;
 
 namespace Microsoft.AspNet.StressFramework
 {
@@ -39,7 +38,7 @@ namespace Microsoft.AspNet.StressFramework
             var method = typ.GetMethods()
                 .SingleOrDefault(m =>
                     m.Name.Equals(methodName) &&
-                    typeof(IStressTestHost).IsAssignableFrom(m.ReturnType) &&
+                    typeof(StressRunSetup).IsAssignableFrom(m.ReturnType) &&
                     m.IsPublic &&
                     m.GetParameters().Length == 0);
             if (method == null)
@@ -50,9 +49,15 @@ namespace Microsoft.AspNet.StressFramework
 
             // Construct the class and invoke the method
             var instance = Activator.CreateInstance(typ);
-            var host = (IStressTestHost)method.Invoke(instance, new object[0]);
+            var setup = (StressRunSetup)method.Invoke(instance, new object[0]);
 
             StressTestTrace.WriteLine("Host Ready for release");
+            var context = new StressTestHostContext
+            {
+                Iterations = setup.HostIterations,
+                WarmupIterations = setup.WarmupIterations
+            };
+            setup.Host.Setup(context);
 
             // Read the release message from the standard input
             var released = Console.ReadLine();
@@ -63,7 +68,7 @@ namespace Microsoft.AspNet.StressFramework
 
             // Run the host
             StressTestTrace.WriteLine("Host Released");
-            host.Run(new StressTestHostContext());
+            setup.Host.Run(context);
 
             StressTestTrace.WriteLine("Host Completed");
             return 0;
