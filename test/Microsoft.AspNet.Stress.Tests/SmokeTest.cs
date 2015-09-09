@@ -15,7 +15,7 @@ namespace Microsoft.AspNet.Stress.Tests
     public class SmokeTest
     {
         [StressTest]
-        [TotalMemoryCollector]
+        [ElapsedTimeUnder(Seconds = 1)]
         public void SmokeyMcSmokeTest()
         {
             Assert.True(true);

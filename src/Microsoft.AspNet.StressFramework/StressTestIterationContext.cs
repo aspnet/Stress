@@ -1,28 +1,45 @@
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.AspNet.StressFramework.Collectors;
+using Xunit.Sdk;
 
 namespace Microsoft.AspNet.StressFramework
 {
     public class StressTestIterationContext
     {
-        private IList<ICollector> _collectors;
-        private List<DataPoint> _recordings = new List<DataPoint>();
-        private Stopwatch _stopwatch;
+        private readonly IList<ICollector> _collectors;
+        private readonly Stopwatch _stopwatch = new Stopwatch();
+        private readonly List<Metric> _recordings = new List<Metric>();
+        private readonly IMessageBus _bus;
+        private readonly Process _me;
 
-        public StressTestIterationContext(IList<ICollector> collectors)
+        private MemoryUsage _startMemory;
+        private MemoryUsage _endMemory;
+        private CpuTime _startCpu;
+
+        public IReadOnlyList<Metric> Recordings { get; }
+        public int Iteration { get; }
+
+        public StressTestIterationContext(int iteration, IList<ICollector> collectors, IMessageBus bus)
         {
+            Iteration = iteration;
+
             _collectors = collectors;
+            _bus = bus;
+            _me = Process.GetCurrentProcess();
+
+            // The read-only wrapper IS live updated by changes to the underlying list
+            // https://msdn.microsoft.com/query/dev14.query?appId=Dev14IDEF1&l=EN-US&k=k(System.Collections.Generic.List`1.AsReadOnly);k(SolutionItemsProject);k(DevLang-csharp)&rd=true
+            Recordings = _recordings.AsReadOnly();
         }
 
         /// <summary>
-        /// Record a data point
+        /// Record a metric
         /// </summary>
         public void Record<T>(T data)
         {
-            var dataPoint = DataPoint.Create(data);
-            _recordings.Add(dataPoint);
+            var metric = Metric.Create(Iteration, data);
+            _recordings.Add(metric);
         }
 
         public void BeginIteration()
@@ -32,12 +49,29 @@ namespace Microsoft.AspNet.StressFramework
                 collector.BeginIteration(this);
             }
 
-            _stopwatch = Stopwatch.StartNew();
+            // Capture memory usage after everything to ensure we miss any allocations due to collectors
+            _startMemory = MemoryUsage.Capture(_me);
+
+            // Now capture CPU Time, which is a struct so it should have a minimal impact on memory
+            _startCpu = CpuTime.Capture(_me);
+
+            // Start capturing elapsed time
+            _stopwatch.Start();
         }
 
         public void EndIteration()
         {
+            // Stop capturing elapsed time
             _stopwatch.Stop();
+
+            // Capture CPU time
+
+            // Capture memory usage again, before stopping collectors to ensure we miss their allocations
+            _endMemory = MemoryUsage.Capture();
+
+            // Record the elapsed time and memory usage
+            _recordings.Add(Metric.Create(Iteration, new ElapsedTime(_stopwatch.Elapsed)));
+            _recordings.Add(Metric.Create(Iteration, MemoryUsage.Compare(_startMemory, _endMemory)));
 
             foreach (var collector in _collectors)
             {

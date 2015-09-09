@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace Microsoft.AspNet.StressFramework
 {
-    public class CpuTime
+    public struct CpuTime
     {
         public TimeSpan KernelTime { get; }
         public TimeSpan UserTime { get; }
@@ -14,12 +14,11 @@ namespace Microsoft.AspNet.StressFramework
             UserTime = userTime;
         }
 
-        public static CpuTime Capture()
+        public static CpuTime Capture(Process process)
         {
-            var me = Process.GetCurrentProcess();
             return new CpuTime(
-                me.PrivilegedProcessorTime,
-                me.UserProcessorTime);
+                process.PrivilegedProcessorTime,
+                process.UserProcessorTime);
         }
 
         public override string ToString()
