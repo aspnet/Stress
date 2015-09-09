@@ -49,12 +49,6 @@ namespace Microsoft.AspNet.StressFramework
                 collector.BeginIteration(this);
             }
 
-            // Capture memory usage after everything to ensure we miss any allocations due to collectors
-            _startMemory = MemoryUsage.Capture(_me);
-
-            // Now capture CPU Time, which is a struct so it should have a minimal impact on memory
-            _startCpu = CpuTime.Capture(_me);
-
             // Start capturing elapsed time
             _stopwatch.Start();
         }
@@ -64,16 +58,8 @@ namespace Microsoft.AspNet.StressFramework
             // Stop capturing elapsed time
             _stopwatch.Stop();
 
-            // Capture CPU time
-
             // Record the elapsed time and memory usage
             _recordings.Add(Metric.Create(Iteration, new ElapsedTime(_stopwatch.Elapsed)));
-            _recordings.Add(Metric.Create(Iteration, MemoryUsage.Compare(_startMemory, _endMemory)));
-
-            foreach (var collector in _collectors)
-            {
-                collector.EndIteration(this);
-            }
         }
     }
 }

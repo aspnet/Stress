@@ -9,6 +9,7 @@ using Xunit.Abstractions;
 using Xunit.Sdk;
 using System.Collections.Generic;
 using Microsoft.AspNet.StressFramework.Collectors;
+using System.Reflection;
 
 #if DNXCORE50 || DNX451
 using Microsoft.Dnx.Runtime;
@@ -77,22 +78,17 @@ namespace Microsoft.AspNet.StressFramework
 
             try
             {
-                for (int i = 0; i < TestCase.WarmupIterations; i++)
-                {
-                    await InvokeTestMethodAsync(instance);
-                }
+                Console.WriteLine($"[Driver:{Process.GetCurrentProcess().Id}] Launching Host");
 
+                // Launch the host to run the test
+                var host = LaunchHost(TestMethod);
+
+                Console.WriteLine($"[Driver:{Process.GetCurrentProcess().Id}] Releasing Host");
                 var stopwatch = Stopwatch.StartNew();
-                for (int i = 0; i < TestCase.Iterations; i++)
-                {
-                    var context = new StressTestIterationContext(i, _collectors, MessageBus);
-                    context.BeginIteration();
-
-                    await InvokeTestMethodAsync(instance);
-
-                    context.EndIteration();
-                }
+                host.BeginIterations();
+                host.Process.WaitForExit();
                 stopwatch.Stop();
+                Console.WriteLine($"[Driver:{Process.GetCurrentProcess().Id}] Host Terminated");
 
                 var executionTime = (decimal)stopwatch.Elapsed.TotalSeconds;
 
@@ -113,6 +109,14 @@ namespace Microsoft.AspNet.StressFramework
             {
                 (instance as IDisposable)?.Dispose();
             }
+        }
+
+        private StressTestHostProcess LaunchHost(MethodInfo method)
+        {
+            return StressTestHostProcess.Launch(
+                method.DeclaringType.GetTypeInfo().Assembly.GetName().Name,
+                method.DeclaringType.FullName,
+                method.Name);
         }
 
         private async Task InvokeTestMethodAsync(object instance)
