@@ -5,8 +5,7 @@
   },
     "dependencies": {
         "Microsoft.AspNet.StressFramework": "",
-        "Microsoft.AspNet.TestHost": "1.0.0-*",
-        "HelloWorldMvc": "1.0.0-*"
+        "Microsoft.AspNet.TestHost": "1.0.0-*"
     },
   "frameworks": {
     "dnx451": { },

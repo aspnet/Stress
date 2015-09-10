@@ -2,7 +2,7 @@
 {
     public interface IStressTestHost
     {
-        void Setup(StressTestHostContext context);
+        void Setup();
 
         void Run(StressTestHostContext context);
     }

@@ -27,10 +27,6 @@ namespace Microsoft.AspNet.Stress.Tests
                     }.ToList();
 
             return StressRunSetup.CreateTest(
-                () =>
-                {
-                    // Setup
-                },
                 async () =>
                 {
                     // Act

@@ -1,28 +1,37 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace Microsoft.AspNet.StressFramework
 {
     public class BasicDriver : IStressTestDriver
     {
-        private readonly Action _execute;
-        private readonly Action _setup;
+        private readonly IStressTestHost _host;
+        private readonly Func<Task> _execute;
 
-        public BasicDriver(Action setup, Action execute)
+        public BasicDriver(Func<Task> execute)
         {
-            _setup = setup;
             _execute = execute;
         }
 
-        public void Setup() => _setup();
-
-        public void Run(int driverIterations)
+        public void Setup(StressTestDriverContext context)
         {
-            Console.WriteLine("Executing driver.");
-            for (var i = 0; i < driverIterations; i++)
+            context.Setup.Host.Setup();
+        }
+
+        public async Task RunAsync(StressTestDriverContext context)
+        {
+            StressTestTrace.WriteRawLine("Begin warmup");
+            for (var i = 0; i < context.Setup.WarmupIterations; i++)
             {
-                _execute();
+                await _execute();
             }
-            Console.WriteLine("Done executing driver.");
+
+            StressTestTrace.WriteRawLine("End warmup");
+
+            for (var i = 0; i < context.Setup.Iterations; i++)
+            {
+                await _execute();
+            }
         }
     }
 }

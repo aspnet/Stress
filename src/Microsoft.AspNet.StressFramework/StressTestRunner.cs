@@ -9,13 +9,10 @@ using Xunit.Abstractions;
 using Xunit.Sdk;
 using System.Collections.Generic;
 using Microsoft.AspNet.StressFramework.Collectors;
-using System.Linq;
-using System.Reflection;
 
 #if DNXCORE50 || DNX451
 using Microsoft.Dnx.Runtime;
 using Microsoft.Dnx.Runtime.Infrastructure;
-using XunitDiagnosticMessage = Xunit.DiagnosticMessage;
 #else
 using XunitDiagnosticMessage = Xunit.Sdk.DiagnosticMessage;
 #endif
@@ -79,25 +76,29 @@ namespace Microsoft.AspNet.StressFramework
 
             try
             {
-                StressTestTrace.WriteLine("Launching Host");
-
                 // Launch the host to run the test
                 var setup = InvokeTestMethodAsync(instance);
-                setup.Driver.Setup();
-                var host = LaunchHost(TestMethod);
-
-                var stopwatch = Stopwatch.StartNew();
-                StressTestTrace.WriteLine("Releasing Host");
-                host.BeginIterations();
-                setup.Driver.Run(setup.DriverIterations);
-
-                if (setup.HostIterations != 0)
+                var context = new StressTestDriverContext
                 {
-                    host.Process.WaitForExit();
-                }
+                    Setup = setup,
+                    TestMethod = TestMethod,
+                };
 
+                setup.Driver.Setup(context);
+                var stopwatch = Stopwatch.StartNew();
+                try
+                {
+                    await aggregator.RunAsync(() => setup.Driver.RunAsync(context));
+                }
+                finally
+                {
+                    var disposable = setup.Host as IDisposable;
+                    disposable?.Dispose();
+
+                    disposable = setup.Driver as IDisposable;
+                    disposable?.Dispose();
+                }
                 stopwatch.Stop();
-                StressTestTrace.WriteLine("Host Terminated");
 
                 var executionTime = (decimal)stopwatch.Elapsed.TotalSeconds;
 
@@ -111,18 +112,13 @@ namespace Microsoft.AspNet.StressFramework
             }
             catch (Exception ex)
             {
-                Aggregator.Add(ex);
+                aggregator.Add(ex);
                 return Tuple.Create(0m, output);
             }
             finally
             {
                 (instance as IDisposable)?.Dispose();
             }
-        }
-
-        private StressTestHostProcess LaunchHost(MethodInfo method)
-        {
-            return StressTestHostProcess.Launch(method, StressTestTrace.WriteRawLine);
         }
 
         private StressRunSetup InvokeTestMethodAsync(object instance)

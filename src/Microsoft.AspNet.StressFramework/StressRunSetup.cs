@@ -11,23 +11,29 @@ namespace Microsoft.AspNet.StressFramework
 
         public int WarmupIterations { get; set; } = 1;
 
-        public int HostIterations { get; set; } = 0;
+        public int Iterations { get; set; } = 50;
 
-        public int DriverIterations { get; set; } = 10;
-
-        public static StressRunSetup CreateTest(Action setup, Func<Task> execute)
+        public static StressRunSetup CreateTest(Func<Task> execute)
         {
-            var host = new BasicHost(setup, execute);
-            var driver = new BasicDriver(
-                setup: () => { },
-                execute: () => { });
+            var host = new BasicHost(execute);
+            var driver = new BenchmarkingDriver();
 
             return new StressRunSetup
             {
                 Host = host,
                 Driver = driver,
-                DriverIterations = 0,
-                HostIterations = 10
+            };
+        }
+
+        public static StressRunSetup CreateClientServerTest(string applicationPath, Func<Task> execute)
+        {
+            var host = new KestrelHost(applicationPath);
+            var driver = new BasicDriver(execute);
+
+            return new StressRunSetup
+            {
+                Host = host,
+                Driver = driver,
             };
         }
     }

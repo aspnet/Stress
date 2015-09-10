@@ -8,10 +8,15 @@
     "Microsoft.AspNet.WebUtilities": "1.0.0-*"
   },
   "frameworks": {
-    "dnx451": { },
+    "dnx451": {
+        "frameworkAssemblies": {
+            "System.Net.Http": "4.0.0.0"
+        }
+    },
     "dnxcore50": {
       "dependencies": {
-        "System.Runtime": "4.0.21-beta-*"
+        "System.Runtime": "4.0.21-beta-*",
+        "System.Net.Http": "4.0.1-beta-*"
       }
     }
   }

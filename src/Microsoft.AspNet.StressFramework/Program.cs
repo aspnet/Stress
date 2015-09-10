@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 
@@ -52,12 +51,7 @@ namespace Microsoft.AspNet.StressFramework
             var setup = (StressRunSetup)method.Invoke(instance, new object[0]);
 
             StressTestTrace.WriteLine("Host Ready for release");
-            var context = new StressTestHostContext
-            {
-                Iterations = setup.HostIterations,
-                WarmupIterations = setup.WarmupIterations
-            };
-            setup.Host.Setup(context);
+            setup.Host.Setup();
 
             // Read the release message from the standard input
             var released = Console.ReadLine();
@@ -68,6 +62,11 @@ namespace Microsoft.AspNet.StressFramework
 
             // Run the host
             StressTestTrace.WriteLine("Host Released");
+            var context = new StressTestHostContext
+            {
+                Iterations = setup.Iterations,
+                WarmupIterations = setup.WarmupIterations
+            };
             setup.Host.Run(context);
 
             StressTestTrace.WriteLine("Host Completed");

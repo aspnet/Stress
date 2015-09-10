@@ -1,9 +1,11 @@
-﻿namespace Microsoft.AspNet.StressFramework
+﻿using System.Threading.Tasks;
+
+namespace Microsoft.AspNet.StressFramework
 {
     public interface IStressTestDriver
     {
-        void Setup();
+        void Setup(StressTestDriverContext context);
 
-        void Run(int driverIterations);
+        Task RunAsync(StressTestDriverContext context);
     }
 }
