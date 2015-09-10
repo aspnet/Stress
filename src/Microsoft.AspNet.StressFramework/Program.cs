@@ -10,36 +10,39 @@ namespace Microsoft.AspNet.StressFramework
     {
         public int Main(string[] args)
         {
-            Console.WriteLine($"[Host:{Process.GetCurrentProcess().Id}] Host Launched");
-            if(args.Length != 4)
+            StressTestTrace.SetIsHost();
+
+            StressTestTrace.WriteLine("Host Launched");
+            if (args.Length != 3)
             {
-                Console.Error.WriteLine("Usage: stresshost <LOCK_NAME> <TEST_LIBRARY> <TEST_CLASS> <TEST_METHOD>");
+                Console.Error.WriteLine("Usage: stresshost <TEST_LIBRARY> <TEST_CLASS> <TEST_METHOD>");
                 return -1;
             }
 
-            var lockName = args[0];
-            var libraryName = args[1];
-            var className = args[2];
-            var methodName = args[3];
+            var libraryName = args[0];
+            var className = args[1];
+            var methodName = args[2];
 
             // Find the class
             var asm = Assembly.Load(new AssemblyName(libraryName));
-            if (asm == null) {
+            if (asm == null)
+            {
                 Console.Error.WriteLine($"Failed to load assembly: {libraryName}");
                 return -2;
             }
             var typ = asm.GetExportedTypes().FirstOrDefault(t => t.FullName.Equals(className));
-            if (typ == null) {
+            if (typ == null)
+            {
                 Console.Error.WriteLine($"Failed to locate type: {className} in {libraryName}");
                 return -3;
             }
             var method = typ.GetMethods()
-                .SingleOrDefault(m => 
-                    m.Name.Equals(methodName) && 
-                    typeof(IStressTestHost).IsAssignableFrom(m.ReturnType) && 
-                    m.IsPublic && 
+                .SingleOrDefault(m =>
+                    m.Name.Equals(methodName) &&
+                    typeof(IStressTestHost).IsAssignableFrom(m.ReturnType) &&
+                    m.IsPublic &&
                     m.GetParameters().Length == 0);
-            if(method == null)
+            if (method == null)
             {
                 Console.Error.WriteLine($"Failed to locate method: {methodName} in {className}");
                 return -4;
@@ -49,13 +52,20 @@ namespace Microsoft.AspNet.StressFramework
             var instance = Activator.CreateInstance(typ);
             var host = (IStressTestHost)method.Invoke(instance, new object[0]);
 
-            SyncGate.WaitFor(lockName);
+            StressTestTrace.WriteLine("Host Ready for release");
+
+            // Read the release message from the standard input
+            var released = Console.ReadLine();
+            if (!string.Equals(StressTestHostProcess.ReleaseMessage, released, StringComparison.Ordinal))
+            {
+                StressTestTrace.WriteLine("Host received invalid release message. Aborting");
+            }
 
             // Run the host
-            Console.WriteLine($"[Host:{Process.GetCurrentProcess().Id}] Host Released");
+            StressTestTrace.WriteLine("Host Released");
             host.Run(new StressTestHostContext());
 
-            Console.WriteLine($"[Host:{Process.GetCurrentProcess().Id}] Host Completed");
+            StressTestTrace.WriteLine("Host Completed");
             return 0;
         }
     }

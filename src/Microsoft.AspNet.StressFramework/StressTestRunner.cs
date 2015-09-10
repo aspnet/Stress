@@ -79,17 +79,17 @@ namespace Microsoft.AspNet.StressFramework
 
             try
             {
-                Console.WriteLine($"[Driver:{Process.GetCurrentProcess().Id}] Launching Host");
+                StressTestTrace.WriteLine("Launching Host");
 
                 // Launch the host to run the test
                 var host = LaunchHost(TestMethod);
 
-                Console.WriteLine($"[Driver:{Process.GetCurrentProcess().Id}] Releasing Host");
                 var stopwatch = Stopwatch.StartNew();
+                StressTestTrace.WriteLine("Releasing Host");
                 host.BeginIterations();
                 host.Process.WaitForExit();
                 stopwatch.Stop();
-                Console.WriteLine($"[Driver:{Process.GetCurrentProcess().Id}] Host Terminated");
+                StressTestTrace.WriteLine("Host Terminated");
 
                 var executionTime = (decimal)stopwatch.Elapsed.TotalSeconds;
 
@@ -114,10 +114,7 @@ namespace Microsoft.AspNet.StressFramework
 
         private StressTestHostProcess LaunchHost(MethodInfo method)
         {
-            return StressTestHostProcess.Launch(
-                method.DeclaringType.GetTypeInfo().Assembly.GetName().Name,
-                method.DeclaringType.FullName,
-                method.Name);
+            return StressTestHostProcess.Launch(method, StressTestTrace.WriteRawLine);
         }
 
         private async Task InvokeTestMethodAsync(object instance)

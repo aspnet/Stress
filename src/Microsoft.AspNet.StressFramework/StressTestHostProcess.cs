@@ -2,33 +2,37 @@
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace Microsoft.AspNet.StressFramework
 {
     internal class StressTestHostProcess
     {
-        private SyncGate _syncGate;
+        public static readonly string ReleaseMessage = "RELEASE_STRESS_TEST_HOST";
 
         public Process Process { get; }
 
-        public StressTestHostProcess(SyncGate syncGate, Process process)
+        public StressTestHostProcess(Process process)
         {
-            _syncGate = syncGate;
             Process = process;
         }
 
         public void BeginIterations()
         {
-            _syncGate.Release();
+            Process.StandardInput.WriteLine(ReleaseMessage);
         }
 
-        internal static StressTestHostProcess Launch(string assembly, string type, string method)
+        internal static StressTestHostProcess Launch(MethodInfo testMethod, Action<string> outputWriter)
         {
-            var syncGate = SyncGate.CreateParent();
+            var assembly = testMethod.DeclaringType.GetTypeInfo().Assembly.GetName().Name;
+            var type = testMethod.DeclaringType.FullName;
+            var method = testMethod.Name;
+
             var me = Process.GetCurrentProcess();
             var process = new Process();
             process.StartInfo.FileName = me.MainModule.FileName;
-            process.StartInfo.Arguments = $"{typeof(Program).GetTypeInfo().Assembly.GetName().Name} {syncGate.Name} {assembly} {type} {method}";
+            process.StartInfo.Arguments = $"{typeof(Program).GetTypeInfo().Assembly.GetName().Name} \"{assembly}\" \"{type}\" \"{method}\"";
             process.StartInfo.WorkingDirectory = Directory.GetCurrentDirectory();
             process.StartInfo.RedirectStandardError = true;
             process.StartInfo.RedirectStandardInput = true;
@@ -37,16 +41,16 @@ namespace Microsoft.AspNet.StressFramework
             process.StartInfo.CreateNoWindow = true;
             process.OutputDataReceived += (sender, args) =>
             {
-                Console.WriteLine(args.Data);
+                outputWriter(args.Data);
             };
             process.ErrorDataReceived += (sender, args) =>
             {
-                Console.Error.WriteLine(args.Data);
+                outputWriter(args.Data);
             };
             process.Start();
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
-            return new StressTestHostProcess(syncGate, process);
+            return new StressTestHostProcess(process);
         }
     }
 }
