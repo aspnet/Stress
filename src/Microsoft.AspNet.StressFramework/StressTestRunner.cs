@@ -9,6 +9,8 @@ using Xunit.Abstractions;
 using Xunit.Sdk;
 using System.Collections.Generic;
 using Microsoft.AspNet.StressFramework.Collectors;
+using Microsoft.AspNet.StressFramework.Hosting;
+using System.Linq;
 
 #if DNXCORE50 || DNX451
 using Microsoft.Dnx.Runtime;
@@ -69,36 +71,29 @@ namespace Microsoft.AspNet.StressFramework
 
             var instance = Activator.CreateInstance(TestClass, ConstructorArguments);
 
-            foreach (var collector in _collectors)
-            {
-                collector.Initialize();
-            }
+            // Set up collector context
+            var context = new CollectorContext(MessageBus, Test);
 
             try
             {
-                // Launch the host to run the test
-                var setup = InvokeTestMethodAsync(instance);
-                var context = new StressTestDriverContext
+                // Get the test implementation
+                var stopwatch = new Stopwatch();
+                using (var setup = InvokeTestMethod(instance))
                 {
-                    Setup = setup,
-                    TestMethod = TestMethod,
-                };
+                    // Set up the stress run
+                    setup.Setup(TestMethod, _collectors, context);
 
-                setup.Driver.Setup(context);
-                var stopwatch = Stopwatch.StartNew();
-                try
-                {
-                    await aggregator.RunAsync(() => setup.Driver.RunAsync(context));
+                    // Run the test code
+                    stopwatch = Stopwatch.StartNew();
+                    try
+                    {
+                        await aggregator.RunAsync(() => setup.RunAsync());
+                    }
+                    finally
+                    {
+                        stopwatch.Stop();
+                    }
                 }
-                finally
-                {
-                    var disposable = setup.Host as IDisposable;
-                    disposable?.Dispose();
-
-                    disposable = setup.Driver as IDisposable;
-                    disposable?.Dispose();
-                }
-                stopwatch.Stop();
 
                 var executionTime = (decimal)stopwatch.Elapsed.TotalSeconds;
 
@@ -112,6 +107,7 @@ namespace Microsoft.AspNet.StressFramework
             }
             catch (Exception ex)
             {
+                StressTestTrace.WriteLine(ex.ToString());
                 aggregator.Add(ex);
                 return Tuple.Create(0m, output);
             }
@@ -121,7 +117,7 @@ namespace Microsoft.AspNet.StressFramework
             }
         }
 
-        private StressRunSetup InvokeTestMethodAsync(object instance)
+        private StressRunSetup InvokeTestMethod(object instance)
         {
             return (StressRunSetup)TestMethod.Invoke(instance, TestMethodArguments);
         }

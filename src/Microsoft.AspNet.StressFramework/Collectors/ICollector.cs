@@ -1,20 +1,19 @@
+﻿using System.Diagnostics;
+using System.Threading.Tasks;
+
 namespace Microsoft.AspNet.StressFramework.Collectors
 {
     public interface ICollector
     {
         /// <summary>
-        /// Called by the stress framework to initialize the collector, before any iterations have been run
+        /// Called by the stress framework to initialize the collector
         /// </summary>
-        void Initialize();
+        void Initialize(Process target, CollectorContext context);
 
         /// <summary>
-        /// Called by the stress framework before a non-warmup iteration is executed.
+        /// Called by the stress framework to stop the collector
         /// </summary>
-        void BeginIteration(StressTestIterationContext context);
-
-        /// <summary>
-        /// Called by the stress framework after a non-warmup iteration is executed.
-        /// </summary>
-        void EndIteration(StressTestIterationContext context);
+        /// <returns></returns>
+        Task StopAsync();
     }
 }

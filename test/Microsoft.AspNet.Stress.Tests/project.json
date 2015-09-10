@@ -12,12 +12,6 @@
         "frameworkAssemblies": {
             "System.Net.Http": "4.0.0.0"
         }
-    },
-    "dnxcore50": {
-      "dependencies": {
-        "System.Runtime": "4.0.21-beta-*",
-        "System.Net.Http": "4.0.1-beta-*"
-      }
     }
   }
 }

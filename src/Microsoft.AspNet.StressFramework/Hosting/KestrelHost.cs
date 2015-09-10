@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Reflection;
+using System.Threading.Tasks;
 
-namespace Microsoft.AspNet.StressFramework
+namespace Microsoft.AspNet.StressFramework.Hosting
 {
     public class KestrelHost : IStressTestHost, IDisposable
     {
         private readonly string _applicationPath;
+        private readonly TaskCompletionSource<object> _tcs = new TaskCompletionSource<object>();
         private Process _process;
 
         public KestrelHost(string applicationPath)
@@ -13,7 +16,7 @@ namespace Microsoft.AspNet.StressFramework
             _applicationPath = applicationPath;
         }
 
-        public void Setup()
+        public Process LaunchHost(MethodInfo method)
         {
             var dnxProcess = Process.GetCurrentProcess();
 
@@ -28,7 +31,8 @@ namespace Microsoft.AspNet.StressFramework
                     RedirectStandardOutput = true,
                     UseShellExecute = false,
                     CreateNoWindow = true
-                }
+                },
+                EnableRaisingEvents = true
             };
 
             _process.OutputDataReceived += (sender, args) =>
@@ -39,16 +43,14 @@ namespace Microsoft.AspNet.StressFramework
             {
                 StressTestTrace.WriteRawLine(args.Data);
             };
+            _process.Exited += (sender, args) =>
+            {
+                _tcs.SetResult(null);
+            };
             _process.Start();
             _process.BeginOutputReadLine();
             _process.BeginErrorReadLine();
-
-
-        }
-
-        public void Run(StressTestHostContext context)
-        {
-            // Do nothing
+            return _process;
         }
 
         public void Dispose()
@@ -59,6 +61,23 @@ namespace Microsoft.AspNet.StressFramework
             }
 
             _process.Dispose();
+        }
+
+        public void Start()
+        {
+            // Already running... kinda... we probably need to sync up with Kestrel to figure out when
+            // it is actually listening...
+        }
+
+        public Task WaitForExitAsync()
+        {
+            return _tcs.Task;
+        }
+
+        public Task ShutdownAsync()
+        {
+            _process.Kill();
+            return _tcs.Task;
         }
     }
 }

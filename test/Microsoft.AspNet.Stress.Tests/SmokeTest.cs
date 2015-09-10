@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Microsoft.AspNet.StressFramework;
+using Microsoft.AspNet.StressFramework.Collectors;
 using Microsoft.AspNet.WebUtilities;
 using Xunit;
 
@@ -13,6 +14,7 @@ namespace Microsoft.AspNet.Stress.Tests
     public class SmokeTest
     {
         [StressTest]
+        [IterationElapsedTimeCollector]
         public StressRunSetup SmokeyMcSmokeTest()
         {
             var formData = "first=second&third=fourth&fifth=sixth";
