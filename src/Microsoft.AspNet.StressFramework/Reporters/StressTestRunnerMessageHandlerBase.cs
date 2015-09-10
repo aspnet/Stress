@@ -3,11 +3,11 @@ using Microsoft.AspNet.StressFramework.Collectors;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Microsoft.AspNet.StressFramework
+namespace Microsoft.AspNet.StressFramework.Reporters
 {
-    public abstract class DefaultStressTestMessageVisitor : DefaultRunnerReporterMessageHandler
+    public abstract class StressTestRunnerMessageHandlerBase : DefaultRunnerReporterMessageHandler
     {
-        public DefaultStressTestMessageVisitor(IRunnerLogger logger)
+        public StressTestRunnerMessageHandlerBase(IRunnerLogger logger)
             : base(logger)
         {
         }
@@ -23,7 +23,7 @@ namespace Microsoft.AspNet.StressFramework
             return true;
         }
 
-        bool DoVisit<TMessage>(IMessageSinkMessage message, Func<DefaultStressTestMessageVisitor, TMessage, bool> callback)
+        bool DoVisit<TMessage>(IMessageSinkMessage message, Func<StressTestRunnerMessageHandlerBase, TMessage, bool> callback)
             where TMessage : class, IMessageSinkMessage
         {
             var castMessage = message as TMessage;

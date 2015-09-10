@@ -1,7 +1,7 @@
 ﻿using Xunit;
 using Xunit.Abstractions;
 
-namespace Microsoft.AspNet.StressFramework
+namespace Microsoft.AspNet.StressFramework.Reporters
 {
     public class DefaultStressTestRunnerReporter : DefaultRunnerReporter
     {
