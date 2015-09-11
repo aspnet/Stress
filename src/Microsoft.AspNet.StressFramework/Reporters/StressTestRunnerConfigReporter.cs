@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Microsoft.Framework.Configuration;
 using Xunit;
@@ -9,15 +10,8 @@ namespace Microsoft.AspNet.StressFramework.Reporters
     public class StressTestRunnerConfigReporter : DefaultRunnerReporter
     {
         private const string StressConfigFileName = "stressConfig.json";
-        private const string StressOutputReporterConfigName = "StressOutputReporter";
-        private static readonly Lazy<IRunnerReporter> _defaultReporter = new Lazy<IRunnerReporter>(
-            () => new DefaultStressTestRunnerReporter());
-        private static readonly Lazy<IRunnerReporter> _csvReporter = new Lazy<IRunnerReporter>(
-            () => new StressTestRunnerCSVReporter());
-        private IRunnerReporter _activeReporter;
-
-        private IRunnerReporter DefaultReporter => _defaultReporter.Value;
-        private IRunnerReporter CSVReporter => _csvReporter.Value;
+        private const string CommandConfigName = "Command";
+        private IEnumerable<IRunnerReporter> _activeReporters;
 
         public override string RunnerSwitch => "stressconfig";
 
@@ -25,8 +19,9 @@ namespace Microsoft.AspNet.StressFramework.Reporters
 
         public override IMessageSink CreateMessageHandler(IRunnerLogger logger)
         {
-            if (_activeReporter == null)
+            if (_activeReporters == null)
             {
+                var reporters = new List<IRunnerReporter>();
                 var stressConfigFile = new FileInfo(StressConfigFileName);
                 if (!stressConfigFile.Exists)
                 {
@@ -34,34 +29,53 @@ namespace Microsoft.AspNet.StressFramework.Reporters
                         $"Cannot determine stress configuration. {StressConfigFileName} does not exist.");
                 }
 
-                var config = new ConfigurationBuilder(".")
-                    .AddJsonFile(StressConfigFileName)
-                    .Build();
-                var stressTestOutputReporterName = config[StressOutputReporterConfigName];
+                var config = new ConfigurationBuilder(".").AddJsonFile(StressConfigFileName).Build();
+                var reporterBuilders = new Dictionary<string, Func<IRunnerReporter>>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { DefaultStressTestRunnerReporter.Command, () => new DefaultStressTestRunnerReporter() },
+                    { StressTestRunnerCSVReporter.Command, () => new StressTestRunnerCSVReporter() },
+                    {
+                        StressTestRunnerBaselineReporter.Command,
+                        () =>
+                        {
+                            var baselineConfiguration = new BaselineConfiguration(config);
+                            var baselineReporter = new StressTestRunnerBaselineReporter(baselineConfiguration);
 
-                if (!string.IsNullOrEmpty(stressTestOutputReporterName) ||
-                    string.Equals(
-                        stressTestOutputReporterName,
-                        DefaultReporter.RunnerSwitch,
-                        StringComparison.OrdinalIgnoreCase))
+                            return baselineReporter;
+                        }
+                    },
+                };
+
+                // Can expand this to support multiple, comma separated commands.
+                // Ex: "stressbaseline,stresscsv" to signal that we want to run a baseline and then save the results.
+                var command = config[CommandConfigName];
+
+                Func<IRunnerReporter> reporterBuilder;
+                if (string.IsNullOrEmpty(command))
                 {
-                    _activeReporter = DefaultReporter;
+                    reporterBuilder = reporterBuilders[DefaultStressTestRunnerReporter.Command];
                 }
-                else if (string.Equals(
-                    stressTestOutputReporterName,
-                    CSVReporter.RunnerSwitch,
-                    StringComparison.OrdinalIgnoreCase))
-                {
-                    _activeReporter = CSVReporter;
-                }
-                else
+                else if (!reporterBuilders.TryGetValue(command, out reporterBuilder))
                 {
                     throw new InvalidOperationException(
-                        $"Unknown {StressOutputReporterConfigName} value in {StressConfigFileName}.");
+                        $"Unknown {CommandConfigName} value in {StressConfigFileName}.");
                 }
+
+                var reporter = reporterBuilder();
+                reporters.Add(reporter);
+
+                _activeReporters = reporters;
             }
 
-            return _activeReporter.CreateMessageHandler(logger);
+            var aggregateMessageHandler = new AggregateStressTestRunnerMessageHandler(logger);
+
+            foreach (var reporter in _activeReporters)
+            {
+                var resolvedMessageHandler = reporter.CreateMessageHandler(logger);
+                aggregateMessageHandler.AddMessageHandler(resolvedMessageHandler);
+            }
+
+            return aggregateMessageHandler;
         }
     }
 }
