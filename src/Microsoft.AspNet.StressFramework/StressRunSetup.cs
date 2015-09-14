@@ -12,6 +12,7 @@ namespace Microsoft.AspNet.StressFramework
     public class StressRunSetup  : IDisposable
     {
         private IEnumerable<ICollector> _collectors;
+        private CollectorContext _collectorContext;
 
         public IStressTestHost Host { get; set; }
 
@@ -48,15 +49,22 @@ namespace Microsoft.AspNet.StressFramework
         public void Setup(MethodInfo method, IEnumerable<ICollector> collectors, CollectorContext context)
         {
             _collectors = collectors;
+            _collectorContext = context;
 
             StressTestTrace.WriteLine("Launching Host");
             var hostProcess = Host.LaunchHost(method);
 
+            // Initialize Tracing
+            _collectorContext.TraceSession.Initialize(hostProcess);
+
             // Configure collectors
             foreach(var collector in _collectors)
             {
-                collector.Initialize(hostProcess, context);
+                collector.Initialize(hostProcess, _collectorContext);
             }
+
+            // Start tracing
+            _collectorContext.TraceSession.StartProcessingEvents();
         }
 
         public async Task RunAsync()
@@ -67,6 +75,10 @@ namespace Microsoft.AspNet.StressFramework
             StressTestTrace.WriteLine("Running Driver");
             await Driver.RunAsync(this);
             StressTestTrace.WriteLine("Driver Complete");
+
+            // Shut down tracing
+            // TODO(anurse): Forcibly terminate event pumps that don't shut down in a timely manner?
+            await _collectorContext.TraceSession.WaitForEventPumpAsync();
 
             // Shut down collectors
             // TODO(anurse): Forcibly terminate collectors that don't shut down in a timely manner?

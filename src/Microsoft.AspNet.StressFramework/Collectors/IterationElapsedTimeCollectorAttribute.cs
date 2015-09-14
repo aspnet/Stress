@@ -1,56 +1,35 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.Tracing;
-using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Diagnostics.Tracing;
-using Microsoft.Diagnostics.Tracing.Session;
 
 namespace Microsoft.AspNet.StressFramework.Collectors
 {
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
-    public class IterationElapsedTimeCollectorAttribute : Attribute, ICollector, IDisposable
+    public class IterationElapsedTimeCollectorAttribute : Attribute, ICollector
     {
-        private TraceEventSession _session;
-
         private Dictionary<int, double> _startTimes = new Dictionary<int, double>();
         private Task _eventPump;
 
         public void Initialize(Process hostProcess, CollectorContext context)
         {
-            // Create a trace session for the process
-            _session = new TraceEventSession("DnxStress_IterationTime", TraceEventSessionOptions.Create);
-
-            // Enable the StressTestEventSource
-            _session.EnableProvider(StressTestEventSource.Log.Guid);
+            context.TraceSession.EnableSource(StressTestEventSource.Log);
 
             // Set up capture
-            _session.Source.Dynamic.AddCallbackForProviderEvent(
-                StressTestEventSource.Log.Name,
+            context.TraceSession.AddCallback(
+                StressTestEventSource.Log,
                 "Iteration/Start",
                 evt =>
                 {
-                    if (evt.ProcessID != hostProcess.Id)
-                    {
-                        return;
-                    }
-
                     var iterationId = (int)evt.PayloadByName("iterationNumber");
                     _startTimes[iterationId] = evt.TimeStampRelativeMSec;
                 });
 
-            _session.Source.Dynamic.AddCallbackForProviderEvent(
-                StressTestEventSource.Log.Name,
+            context.TraceSession.AddCallback(
+                StressTestEventSource.Log,
                 "Iteration/Stop",
                 evt =>
                 {
-                    if (evt.ProcessID != hostProcess.Id)
-                    {
-                        return;
-                    }
-
                     var iterationId = (int)evt.PayloadByName("iterationNumber");
                     double startTime;
                     if (_startTimes.TryGetValue(iterationId, out startTime))
@@ -66,36 +45,12 @@ namespace Microsoft.AspNet.StressFramework.Collectors
                         context.EmitMetric(metric);
                     }
                 });
-
-            _session.Source.Dynamic.AddCallbackForProviderEvent(
-                StressTestEventSource.Log.Name,
-                "Run/Stop",
-                evt =>
-                {
-                    if (evt.ProcessID != hostProcess.Id)
-                    {
-                        return;
-                    }
-
-                    _session.Dispose();
-                });
-
-            // Begin pumping events
-            _eventPump = Task.Run(() =>
-            {
-                _session.Source.Process();
-            });
         }
 
         public Task StopAsync()
         {
-            // Wait for the event pump to shut down
-            return _eventPump;
-        }
-
-        public void Dispose()
-        {
-            _session?.Dispose();
+            // Trace session will shut itself down
+            return Task.FromResult(0);
         }
     }
 }

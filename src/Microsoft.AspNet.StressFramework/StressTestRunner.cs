@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using Microsoft.AspNet.StressFramework.Collectors;
 using Microsoft.AspNet.StressFramework.Hosting;
 using System.Linq;
+using Microsoft.AspNet.StressFramework.Tracing;
 
 #if DNXCORE50 || DNX451
 using Microsoft.Dnx.Runtime;
@@ -72,7 +73,13 @@ namespace Microsoft.AspNet.StressFramework
             var instance = Activator.CreateInstance(TestClass, ConstructorArguments);
 
             // Set up collector context
-            var context = new CollectorContext(MessageBus, Test);
+            TraceSession trace = NoopTraceSession.Instance;
+#if DNX451
+            if(PlatformHelper.IsWindows) {
+                trace = new EtwTraceSession();
+            }
+#endif
+            var context = new CollectorContext(MessageBus, Test, trace);
 
             try
             {
