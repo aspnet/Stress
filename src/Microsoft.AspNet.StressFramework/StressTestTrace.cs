@@ -12,6 +12,8 @@ namespace Microsoft.AspNet.StressFramework
 
         private static string _hostOrDriver = "Driver";
 
+        public static bool IsEnabled { get; } = Environment.GetEnvironmentVariable("DNX_STRESS_TRACE") == "1";
+
         public static void WriteLine(string line)
         {
             WriteRawLine($"[{_hostOrDriver}:{Me.Id}] {line}");
@@ -19,7 +21,10 @@ namespace Microsoft.AspNet.StressFramework
 
         internal static void WriteRawLine(string line)
         {
-            Console.WriteLine(line);
+            if (IsEnabled)
+            {
+                Console.WriteLine(line);
+            }
         }
 
         public static void SetIsHost()

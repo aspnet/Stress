@@ -22,7 +22,6 @@ namespace Microsoft.AspNet.Stress.Tests
             return StressRunSetup.CreateClientServerTest(applicationPath,
                 async () =>
                 {
-
                     var result = await client.GetAsync("Home/Index");
 
                     // Assert

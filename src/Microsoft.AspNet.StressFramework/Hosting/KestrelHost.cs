@@ -63,10 +63,13 @@ namespace Microsoft.AspNet.StressFramework.Hosting
             _process.Dispose();
         }
 
-        public void Start()
+        public Task StartAsync()
         {
             // Already running... kinda... we probably need to sync up with Kestrel to figure out when
             // it is actually listening...
+
+            // Wait 200ms for Kestrel to start up (for now)
+            return Task.Delay(200);
         }
 
         public Task WaitForExitAsync()

@@ -8,7 +8,7 @@ namespace Microsoft.AspNet.StressFramework.Hosting
     {
         Process LaunchHost(MethodInfo method);
 
-        void Start();
+        Task StartAsync();
 
         Task WaitForExitAsync();
 

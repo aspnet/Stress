@@ -70,7 +70,7 @@ namespace Microsoft.AspNet.StressFramework
         public async Task RunAsync()
         {
             StressTestTrace.WriteLine("Releasing Host");
-            Host.Start();
+            await Host.StartAsync();
 
             StressTestTrace.WriteLine("Running Driver");
             await Driver.RunAsync(this);

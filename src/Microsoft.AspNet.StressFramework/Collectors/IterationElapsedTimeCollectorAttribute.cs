@@ -9,7 +9,6 @@ namespace Microsoft.AspNet.StressFramework.Collectors
     public class IterationElapsedTimeCollectorAttribute : Attribute, ICollector
     {
         private Dictionary<int, double> _startTimes = new Dictionary<int, double>();
-        private Task _eventPump;
 
         public void Initialize(Process hostProcess, CollectorContext context)
         {

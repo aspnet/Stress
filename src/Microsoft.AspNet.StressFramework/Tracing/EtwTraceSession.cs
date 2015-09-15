@@ -10,6 +10,8 @@ namespace Microsoft.AspNet.StressFramework.Tracing
 {
     internal class EtwTraceSession : TraceSession, IDisposable
     {
+        private static readonly int MyPid = Process.GetCurrentProcess().Id;
+
         private Process _target;
         private TraceEventSession _session;
         private Task _eventPump;
@@ -42,7 +44,11 @@ namespace Microsoft.AspNet.StressFramework.Tracing
                 "Run/Stop",
                 evt =>
                 {
-                    if (evt.ProcessID == _target.Id)
+                    // Have to listen to both the host AND the driver because
+                    // we need to be able to tell when the driver finishes iterating,
+                    // if the IteratingDriver is in use.
+                    // TODO(anurse): Review this system. Maybe we can have a way for the driver to shut down the host.
+                    if (evt.ProcessID == _target.Id || evt.ProcessID == MyPid)
                     {
                         _session.Dispose();
                     }

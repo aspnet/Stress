@@ -16,9 +16,10 @@ namespace Microsoft.AspNet.StressFramework.Hosting
             _execute = execute;
         }
 
-        public void Start()
+        public Task StartAsync()
         {
             _process.StartExecutingHost();
+            return Task.FromResult(0);
         }
 
         public Process LaunchHost(MethodInfo method)
@@ -30,21 +31,7 @@ namespace Microsoft.AspNet.StressFramework.Hosting
         public async Task RunInHostProcessAsync(StressRunSetup setup)
         {
             // Perform the actual iterations. Called by the host process ONLY
-            StressTestTrace.WriteLine("Warming up...");
-            for (int i = 0; i < setup.WarmupIterations; i++)
-            {
-                await _execute();
-            }
-            StressTestTrace.WriteLine("Iterating...");
-            StressTestEventSource.Log.RunStart();
-            for (int i = 0; i < setup.Iterations; i++)
-            {
-                StressTestEventSource.Log.IterationStart(i);
-                await _execute();
-                StressTestEventSource.Log.IterationStop(i);
-            }
-            StressTestEventSource.Log.RunEnd();
-            StressTestTrace.WriteLine("Host Complete");
+            await IterationHelper.IterateAsync(setup, _execute);
         }
 
         public Task WaitForExitAsync()
