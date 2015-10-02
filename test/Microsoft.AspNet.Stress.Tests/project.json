@@ -1,23 +1,21 @@
 ﻿{
-  "version": "1.0.0-*",
-  "commands": {
-    "test": "xunit.runner.dnx"
-  },
-  "dependencies": {
-    "Microsoft.AspNet.StressFramework": "",
-    "Microsoft.AspNet.WebUtilities": "1.0.0-*"
-  },
-  "frameworks": {
-    "dnx451": {
-        "frameworkAssemblies": {
-            "System.Net.Http": "4.0.0.0"
-        }
+    "version": "1.0.0-*",
+    "commands": {
+        "test": "xunit.runner.dnx",
+        "stress": "aspnet.xunit.performance.run"
     },
-    "dnxcore50": {
-      "dependencies": {
-        "System.Runtime": "4.0.21-beta-*",
-        "System.Net.Http": "4.0.1-beta-*"
-      }
+    "dependencies": {
+        "aspnet.xunit.performance.execution": "1.0.0-*",
+        "aspnet.xunit.performance.run": "1.0.0-*",
+        "xunit": "2.1.0-*",
+        "xunit.runner.dnx": "2.1.0-*",
+        "Microsoft.AspNet.WebUtilities": "1.0.0-*"
+    },
+    "frameworks": {
+        "dnx46": {
+            "frameworkAssemblies": {
+                "System.Net.Http": "4.0.0.0"
+            }
+        }
     }
-  }
 }
